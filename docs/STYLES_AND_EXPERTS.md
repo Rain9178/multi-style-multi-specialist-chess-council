@@ -31,6 +31,8 @@ Preference\neq Competence
 }
 \]
 
+This distinction should remain visible even when Style and Expertise interact during training or online control.
+
 ---
 
 ## 2. Style `[B+C]`
@@ -173,7 +175,7 @@ For example:
 =
 0.5\,\text{restriction}
 +
-0.3\,\text{stability}
+0.3\,\text{prophylaxis}
 +
 0.2\,\text{counterattack}
 \]
@@ -237,6 +239,8 @@ e_{\text{conversion}}
 \]
 
 These are also provisional.
+
+Unlike Style, an Expertise coordinate should ultimately be supported by **measured capability**, not merely by intended behaviour or routing labels.
 
 ---
 
@@ -326,6 +330,12 @@ An Expert is therefore not merely:
 
 It must demonstrate measurable target-domain ability.
 
+Likewise:
+
+> targeted training does not itself establish Expertise.
+
+A policy trained specifically for a domain or opponent weakness must still demonstrate held-out capability before being treated as a validated Expert.
+
 ---
 
 ## 11. Style and Expertise are distinct, not orthogonal
@@ -380,7 +390,7 @@ Whether these interactions are significant must be tested.
 
 ## 12. Factorized strategic state `[B+C]`
 
-A conceptual strategic state may be represented as:
+A conceptual strategic context has historically been represented in this project as:
 
 \[
 P=(\mathbf{s},\mathbf{e})
@@ -392,14 +402,47 @@ This generalizes the project's early two-axis intuition:
 P=(x_{\text{style}},y_{\text{expert}})
 \]
 
-The vector representation allows:
+However, a useful distinction is required.
 
-- mixtures;
-- partial activation;
-- interaction;
-- gradual change across a game.
+### Style state
 
-It does not require the learned system to literally contain the proposed human-readable coordinates.
+The active Style mixture may change during a game.
+
+### Expertise capability
+
+Measured specialist competence is normally a slower property of the policy.
+
+### Expertise activation
+
+The Router may change how strongly an existing Expertise capability is emphasized in the current position.
+
+Therefore, when the repository informally writes:
+
+\[
+P_t=(\mathbf{s}_t,\mathbf{e}_t)
+\]
+
+the time-varying \(\mathbf{e}_t\) should be interpreted primarily as:
+
+> **active Expertise emphasis or routing context**
+
+rather than:
+
+> the underlying specialist competence being relearned every move.
+
+A more explicit future implementation may separate:
+
+```text
+measured Expertise capability
+```
+
+from:
+
+```text
+current Expertise activation
+```
+
+The exact notation remains an engineering choice.
 
 ---
 
@@ -578,7 +621,61 @@ A future Router should be able to use both domain relevance and measured special
 
 ---
 
-## 19. Expert activation
+## 19. Expertise competence vs Expertise activation
+
+A further distinction is required.
+
+### Expertise competence
+
+Represents measured capability.
+
+Examples:
+
+- strong rook-endgame performance;
+- strong tactical calculation;
+- strong defensive survival.
+
+This should normally change only through:
+
+- training;
+- evaluation;
+- validated capability updates.
+
+### Expertise activation
+
+Represents how strongly the current control system uses or emphasizes that capability.
+
+This may change from move to move.
+
+Therefore:
+
+\[
+\boxed{
+ExpertiseCompetence
+\neq
+ExpertiseActivation
+}
+\]
+
+For example:
+
+```text
+Policy has strong tactical Expertise
++
+current position is quiet and closed
+```
+
+may correctly produce:
+
+```text
+low tactical-Expert activation
+```
+
+without implying that tactical competence disappeared.
+
+---
+
+## 20. Expert activation
 
 Possible signals include:
 
@@ -594,9 +691,21 @@ The project should avoid a purely hard-coded rule such as:
 
 > “endgame detected → endgame Expert always wins routing.”
 
+Activation should depend on both:
+
+```text
+domain relevance
+```
+
+and:
+
+```text
+validated specialist capability.
+```
+
 ---
 
-## 20. Style × Expert compatibility `[C]`
+## 21. Style × Expert compatibility `[C]`
 
 Not every combination is equally natural in every position.
 
@@ -612,7 +721,7 @@ Examples might include:
 
 - restriction × closed centre: often compatible;
 - simplification × direct kingside attack: sometimes in tension;
-- stability × strategic sacrifice: potentially compatible when compensation is strong.
+- low-risk Style × strategic sacrifice: potentially compatible when compensation is strong.
 
 Low compatibility should not automatically prohibit an unusual combination.
 
@@ -620,7 +729,7 @@ Unexpected combinations may generate useful new behaviour.
 
 ---
 
-## 21. Style may shape the training distribution `[C]`
+## 22. Style may shape the training distribution `[C]`
 
 One project hypothesis is:
 
@@ -635,7 +744,7 @@ Expertise
 For example:
 
 ```text
-Aggressive preference
+High-complexity preference
 ↓
 More open / kingside-complex positions
 ↓
@@ -662,7 +771,7 @@ It requires experimental verification.
 
 ---
 
-## 22. Style is not the same as human imitation
+## 23. Style is not the same as human imitation
 
 The project does not require a Style to resemble a historical human master.
 
@@ -682,7 +791,7 @@ The central question is behavioural differentiation under strong chess constrain
 
 ---
 
-## 23. Optional human-game Style seeds
+## 24. Optional human-game Style seeds
 
 Historical human games may optionally be used as:
 
@@ -703,7 +812,59 @@ A trained system may develop Style combinations that have no direct human analog
 
 ---
 
-## 24. Strategic trajectory
+## 25. League roles are not Style or Expertise
+
+Training roles and strategic dimensions must remain separate.
+
+### League roles
+
+Examples include:
+
+```text
+Main
+Exploiter
+Historical
+```
+
+These describe:
+
+> training purpose or policy lineage.
+
+### Style
+
+Describes:
+
+> strategic preference.
+
+### Expertise
+
+Describes:
+
+> demonstrated capability.
+
+Therefore:
+
+\[
+Main\neq Style
+\]
+
+and:
+
+\[
+Exploiter\neq Expert
+\]
+
+A Main policy may support many Style × Expertise configurations.
+
+An Exploiter may use whichever Style and Expertise combination best exposes a target weakness.
+
+Likewise:
+
+> a policy does not become an Expert merely because it is an Exploiter.
+
+---
+
+## 26. Strategic trajectory
 
 A game can be viewed conceptually as:
 
@@ -725,6 +886,8 @@ P_t=(\mathbf{s}_t,\mathbf{e}_t)
 
 represents the currently emphasized strategic mixture.
 
+As noted earlier, the time-varying Expertise term should primarily be understood as **active Expertise emphasis**, not rapid rewriting of underlying capability.
+
 For example:
 
 ```text
@@ -744,12 +907,12 @@ restriction × closed-centre expertise
 ↓ centre opens
 
 Tactical phase:
-dynamic Style × tactical expertise
+high-complexity Style × tactical expertise
 
 ↓ simplification
 
 Ending:
-technical Style × rook-endgame expertise
+technical / low-risk Style × rook-endgame expertise
 ```
 
 The objective is not frequent switching.
@@ -758,7 +921,7 @@ The objective is **strategically meaningful switching**.
 
 ---
 
-## 25. Persistent routing
+## 27. Persistent routing
 
 A Style/Expert combination should not normally be reselected independently every move.
 
@@ -776,7 +939,49 @@ They do not change the definitions of Style or Expertise.
 
 ---
 
-## 26. Style collapse `[B+C]`
+## 28. Targeted specialist training does not establish Expertise
+
+Later adaptive versions of the architecture may create a candidate specialist after:
+
+```text
+opponent vulnerability
+↓
+TrainingRequest
+↓
+targeted training
+```
+
+This process creates:
+
+> a **candidate specialist**
+
+not:
+
+> a validated Expert.
+
+A candidate specialist must still be evaluated against appropriate controls.
+
+Possible questions include:
+
+- Does it outperform the shared base model in the target domain?
+- Does it outperform a parameter-matched generic adaptation?
+- Does it transfer beyond one opponent?
+- Does its gain survive held-out starting positions?
+- Does it create unacceptable regression elsewhere?
+
+Only demonstrated capability should justify an Expertise claim.
+
+Therefore:
+
+\[
+TargetedTraining
+\not\Rightarrow
+ValidatedExpertise
+\]
+
+---
+
+## 29. Style collapse `[B+C]`
 
 Training may cause differentiated policies to converge toward similar behaviour.
 
@@ -798,7 +1003,7 @@ Independent evaluation is required.
 
 ---
 
-## 27. Candidate Style-preservation methods
+## 30. Candidate Style-preservation methods
 
 Possible future methods include:
 
@@ -815,7 +1020,7 @@ A Style-preservation mechanism should be considered unsuccessful if the resultin
 
 ---
 
-## 28. Expertise evaluation
+## 31. Expertise evaluation
 
 Experts should be tested on held-out target distributions.
 
@@ -839,9 +1044,16 @@ Controls should include:
 - parameter-matched generic model;
 - equal search budget.
 
+For adaptive specialists, useful additional controls may include:
+
+- pre-adaptation policy;
+- observation-only adaptation;
+- opponent-specific training without domain transfer;
+- held-out related opponents.
+
 ---
 
-## 29. Style evaluation
+## 32. Style evaluation
 
 Style should preferably be measured through several independent methods:
 
@@ -856,7 +1068,7 @@ A Style is more convincing if multiple independent measurements agree.
 
 ---
 
-## 30. Initial prototype scale
+## 33. Initial prototype scale
 
 The early prototype does not need the full candidate taxonomy.
 
@@ -881,7 +1093,7 @@ Only useful dimensions should survive later expansion.
 
 ---
 
-## 31. Main hypotheses
+## 34. Main hypotheses
 
 The central hypotheses are:
 
@@ -909,11 +1121,15 @@ Factorized Style/Expert conditioning provides value beyond merely increasing par
 
 Style-induced changes in training-state distribution may contribute to later specialization.
 
-This final hypothesis is especially uncertain and requires explicit testing.
+### H7 — Activation separation
+
+Separating measured Expertise competence from online Expertise activation improves interpretability and prevents routing state from being mistaken for learned capability.
+
+This final group of hypotheses remains especially uncertain and requires explicit testing.
 
 ---
 
-## 32. Failure conditions
+## 35. Failure conditions
 
 This branch should be considered unsuccessful if:
 
@@ -923,6 +1139,8 @@ This branch should be considered unsuccessful if:
 - Style and Expertise cannot be meaningfully distinguished;
 - a parameter-matched generic model performs equally well;
 - routing labels change while observable chess behaviour does not;
-- Style dimensions collapse into redundant or arbitrary coordinates.
+- Style dimensions collapse into redundant or arbitrary coordinates;
+- targeted training produces specialist labels without held-out competence;
+- Expertise activation cannot be meaningfully separated from measured competence.
 
 If these failures occur, the architecture should simplify rather than preserve the terminology artificially.

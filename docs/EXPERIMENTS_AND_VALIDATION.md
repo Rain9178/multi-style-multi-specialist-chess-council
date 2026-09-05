@@ -51,11 +51,15 @@ Possible success dimensions include:
 - population robustness;
 - opponent-prediction quality;
 - opponent-specific exploitation;
+- adaptation speed;
+- regression resistance;
 - compute efficiency.
 
 A mechanism may improve one dimension while harming another.
 
 Those trade-offs should be reported explicitly.
+
+Static strength and adaptive strength should not be treated as the same metric.
 
 ---
 
@@ -120,6 +124,22 @@ Predictability, ModelTrust, dynamic intervention strength, and asymmetric contro
 
 Information-seeking tie-breaking among already near-optimal moves provides enough additional information to justify its complexity.
 
+### H12 — Triggered adaptation
+
+A system that selectively requests or performs targeted adaptation after high-value opponent discoveries can improve opponent-specific performance beyond observation-only adaptation.
+
+### H13 — Event-triggered compute allocation
+
+Event-triggered deliberation allocates compute more effectively than a fixed compute schedule under equal or explicitly reported resource constraints.
+
+### H14 — Archive value selection
+
+A value-gated or representative Archive can preserve useful strategic coverage and regression resistance more efficiently than either no Archive or indiscriminate retention.
+
+### H15 — Weakness amplification
+
+Targeted specialist or Exploiter training can increase the practical exploitability of a confirmed opponent weakness beyond detection and existing-policy selection alone.
+
 All hypotheses remain untested.
 
 ---
@@ -158,6 +178,16 @@ Dynamic vulnerability graph
 Adaptive intervention
 ↓
 Optional active probing
+↓
+Selective persistent opponent state
+↓
+Triggered adaptation
+↓
+Archive-selection experiments
+↓
+Event-triggered deliberation
+↓
+Active self-red-teaming
 ```
 
 A failed early hypothesis should block unnecessary later complexity.
@@ -279,13 +309,40 @@ Add:
 - dynamic Plan changes;
 - adaptive intervention.
 
+---
+
+### B12 — Persistent observation system
+
+Allow:
+
+- cross-game opponent-state retention;
+- Recognizer updates;
+- Shadow updates;
+
+but do not allow targeted policy training or capability creation.
+
+This isolates the value of memory and opponent inference.
+
+---
+
+### B13 — Triggered adaptive system
+
+Add:
+
+- value-gated adaptation requests;
+- targeted specialist / Exploiter training;
+- independent evaluation;
+- validated deployment.
+
+This should be compared directly against B12.
+
 Later stages should only be built if earlier stages produce measurable signal.
 
 ---
 
 ## 6. Compute fairness
 
-Comparisons should control compute.
+Comparisons should control or explicitly account for compute.
 
 A more complex system should not silently receive:
 
@@ -294,6 +351,7 @@ A more complex system should not silently receive:
 - more GPU time;
 - larger parameter count;
 - more training games;
+- external distributed training;
 
 than its baseline without reporting the difference.
 
@@ -310,14 +368,39 @@ population size
 memory use
 ```
 
+Adaptive experiments should additionally report:
+
+```text
+within-game adaptation compute
+between-game adaptation compute
+distributed / external compute
+training wall-clock time
+policy-update count
+archive size
+persistent-state size
+```
+
+A result may still be scientifically useful under unequal compute.
+
+However:
+
+> unequal compute must be treated as part of the experimental condition rather than hidden inside the architecture.
+
 ---
 
-## 7. Engine-match protocol
+## 7. Engine-match protocols
 
-Where practical, engine matches should use:
+Static and adaptive experiments answer different questions.
+
+They should not be mixed.
+
+### 7.1 Static-engine protocol
+
+Where practical, static engine matches should use:
 
 - fixed engine versions;
 - fixed neural-network weights;
+- fixed opponent-specific state;
 - fixed hardware;
 - fixed node budgets or carefully controlled time;
 - paired openings;
@@ -326,7 +409,67 @@ Where practical, engine matches should use:
 - sufficient game counts;
 - confidence intervals.
 
+This protocol primarily measures:
+
+> static playing strength under fixed conditions.
+
 A single match or short winning streak should not be treated as strong evidence.
+
+### 7.2 Adaptive-system protocol
+
+Adaptive experiments may intentionally permit some state to change.
+
+The protocol must explicitly report:
+
+- what may adapt;
+- what remains frozen;
+- whether adaptation is permitted during a game;
+- whether adaptation is permitted between games;
+- whether opponent-specific state persists;
+- whether policy weights may change;
+- whether the shared backbone may change;
+- whether external or distributed compute is available;
+- whether the opponent may also adapt.
+
+Possible standardized modes are:
+
+#### OFF
+
+```text
+Opponent-specific persistent state = disabled or reset
+Targeted training = disabled
+Policy weights = frozen
+```
+
+Purpose:
+
+> measure ordinary static system strength.
+
+#### OBSERVE
+
+```text
+Recognizer / Shadow state may update
+Opponent-specific summaries may persist
+Targeted policy training = disabled
+```
+
+Purpose:
+
+> isolate the value of opponent inference and persistent memory.
+
+#### ADAPT
+
+```text
+Opponent state may persist
+Targeted training may be triggered
+Validated specialists / response policies may change
+```
+
+Purpose:
+
+> measure the value of capability adaptation beyond observation alone.
+
+The exact implementation may differ, but equivalent distinctions should remain explicit.
 
 ---
 
@@ -382,6 +525,15 @@ Possible strength measurements include:
 - conversion rate;
 - defensive survival;
 - strength loss relative to the base engine.
+
+Adaptive experiments may additionally report:
+
+- first-encounter score;
+- late-match score;
+- adaptation rate;
+- recovery after opponent change;
+- exploit-discovery delay;
+- regression after adaptation.
 
 No single metric is sufficient for every experiment.
 
@@ -597,7 +749,9 @@ Possible Router metrics include:
 - Plan completion;
 - forced Plan termination;
 - recovery after model failure;
-- strategic oscillation.
+- strategic oscillation;
+- compute-request frequency;
+- false adaptation requests.
 
 ---
 
@@ -664,7 +818,8 @@ Possible measurements include:
 - population diversity;
 - payoff non-transitivity;
 - specialist development;
-- total compute.
+- total compute;
+- recovery after new exploit discovery.
 
 ---
 
@@ -704,6 +859,44 @@ Does renewed training restore capability?
 
 This tests the practical value of the Archive.
 
+### 29.1 Archive-selection experiment
+
+Compare:
+
+```text
+No Archive
+```
+
+vs:
+
+```text
+Store everything
+```
+
+vs:
+
+```text
+Value-gated Archive
+```
+
+vs, where feasible:
+
+```text
+Representative / clustered Archive
+```
+
+Measure:
+
+- regression resistance;
+- strategic coverage;
+- archive size;
+- storage cost;
+- training cost;
+- revival usefulness;
+- redundancy.
+
+The objective is to test whether long-term strategic memory can remain useful without preserving every encountered opponent or policy.
+
 ---
 
 ## 30. Exploiter experiment
@@ -722,6 +915,42 @@ Then test:
 4. regression against unrelated opponents.
 
 This tests whether the Exploiter produces useful learning rather than narrow overfitting.
+
+### 30.1 Triggered Exploiter Training experiment
+
+Compare:
+
+```text
+Exploit detected
+→ no additional training
+```
+
+vs:
+
+```text
+Exploit detected
+→ existing specialist selected
+```
+
+vs:
+
+```text
+Exploit detected
+→ targeted Exploiter / specialist training
+→ independent evaluation
+→ validated deployment
+```
+
+Measure:
+
+- target-opponent match improvement;
+- training cost;
+- transfer to related opponents;
+- regression against unrelated opponents;
+- time to useful specialist;
+- frequency of false-positive training triggers.
+
+This tests whether targeted adaptation creates new useful capability rather than merely selecting existing capability.
 
 ---
 
@@ -865,6 +1094,20 @@ Measure:
 - false confidence;
 - exploitation performance.
 
+Also test deliberately difficult but low-value opponents.
+
+This helps distinguish:
+
+```text
+hard to predict
+```
+
+from:
+
+```text
+worth spending training compute on
+```
+
 ---
 
 ## 40. Static weakness baseline
@@ -900,6 +1143,38 @@ Measure:
 - false-positive weakness rate;
 - ability to detect downstream weaknesses;
 - recovery after incorrect hypotheses.
+
+### 41.1 Weakness-amplification experiment
+
+After a vulnerability is independently confirmed, compare:
+
+```text
+Detection only
+```
+
+vs:
+
+```text
+Detection + existing Expert selection
+```
+
+vs:
+
+```text
+Detection + targeted specialist / Exploiter training
+```
+
+Possible measurements:
+
+- probability of reaching the vulnerable region;
+- target-opponent error rate;
+- match-score gain;
+- training cost;
+- transfer to related opponents;
+- overfitting;
+- regression elsewhere.
+
+This tests whether a small exploitable tendency can be turned into a more reliable strategic target.
 
 ---
 
@@ -1021,14 +1296,53 @@ Examples:
 - deceptive early behaviour;
 - highly stochastic near-optimal choices;
 - opponents outside the Shadow hypothesis family;
-- strategically unusual engines.
+- strategically unusual engines;
+- opponents that deliberately attempt to induce false adaptation;
+- opponents that switch strategy after the system becomes confident.
 
 Measure:
 
 - ModelTrust collapse;
 - Challenger activation;
 - fallback speed;
-- damage before recovery.
+- damage before recovery;
+- unnecessary training requests;
+- recovery after deceptive behaviour.
+
+### 48.1 Event-triggered deep-deliberation experiment
+
+Under an equal or explicitly controlled total resource budget, compare:
+
+```text
+fixed compute allocation
+```
+
+against:
+
+```text
+event-triggered compute allocation
+```
+
+Use positions or games containing:
+
+- evaluation shocks;
+- tactical refutations;
+- repeated prediction failures;
+- severe Shadow disagreement;
+- Plan breaks;
+- unfamiliar strategic transitions.
+
+Measure:
+
+- position recovery;
+- move quality;
+- compute spent;
+- clock-time use;
+- false escalation rate;
+- missed escalation rate;
+- later-game time pressure.
+
+The objective is to test whether natural event-triggered escalation outperforms simply spending the same additional compute everywhere.
 
 ---
 
@@ -1042,7 +1356,9 @@ Test against:
 - different network versions;
 - different playing strengths;
 - unfamiliar Style distributions;
-- unusual openings.
+- unusual openings;
+- new opponent families;
+- deliberately adaptive opponents where possible.
 
 This helps distinguish genuine robustness from population overfitting.
 
@@ -1059,6 +1375,8 @@ Future experimental reports should include, where appropriate:
 - color control;
 - multiple comparison awareness;
 - effect size.
+
+Adaptive experiments should also report the ordering of games where order matters.
 
 A small positive result without uncertainty should be treated cautiously.
 
@@ -1085,6 +1403,20 @@ active Shadows
 vulnerability hypotheses
 selected move
 actual opponent move
+```
+
+Adaptive experiments may additionally log:
+
+```text
+adaptation mode
+training request
+trigger reason
+compute allocation
+candidate specialist / response branch
+policy deployment
+archive action
+persistent opponent state
+training wall-clock time
 ```
 
 This enables debugging and scientific audit.
@@ -1159,9 +1491,19 @@ Do not yet allow models to affect actual moves.
 
 ---
 
-### Phase 5 — Controlled online adaptation
+### Phase 5 — Controlled online observation
 
-Use engine-vs-engine experiments with opponent-specific routing.
+Use engine-vs-engine experiments with:
+
+- Recognizer;
+- Shadows;
+- opponent-specific state;
+
+while keeping playing-policy weights frozen.
+
+Goal:
+
+> test whether online inference and persistent observation add value before targeted training is introduced.
 
 ---
 
@@ -1175,7 +1517,21 @@ Test:
 
 ---
 
-### Phase 7 — Full ablation
+### Phase 7 — Triggered adaptation
+
+Test:
+
+- OFF;
+- OBSERVE;
+- ADAPT;
+- value-gated training requests;
+- targeted specialist training;
+- validated deployment;
+- adaptation curves.
+
+---
+
+### Phase 8 — Full ablation
 
 Only after individual components show value should the combined architecture be evaluated.
 
@@ -1255,9 +1611,91 @@ If no:
 
 > remove it.
 
+### Gate 10 — Persistent observation
+
+Does OBSERVE outperform OFF?
+
+If no:
+
+> persistent opponent state may not justify its complexity.
+
+### Gate 11 — Triggered training
+
+Does ADAPT outperform OBSERVE after controlling or explicitly accounting for added compute?
+
+If no:
+
+> remove or simplify targeted training.
+
+### Gate 12 — Adaptive compute
+
+Does event-triggered compute allocation outperform simpler allocation under comparable resource constraints?
+
+If no:
+
+> retain simpler compute scheduling.
+
 ---
 
-## 54. Project-level falsification
+## 54. Adaptation-curve experiments
+
+For repeated encounters with a fixed opponent, report performance as a function of encounter count.
+
+Conceptually:
+
+\[
+S(N)
+=
+\text{match performance after }N\text{ encounters}
+\]
+
+Possible block reporting:
+
+```text
+Games 1–20
+Games 21–40
+Games 41–60
+Games 61–80
+Games 81–100
+```
+
+Measure:
+
+- early match score;
+- late match score;
+- adaptation slope;
+- exploit-discovery delay;
+- time to peak improvement;
+- regression;
+- stability after opponent change.
+
+The primary question is not merely:
+
+> Did the adaptive system win?
+
+It is also:
+
+> Did repeated interaction produce measurable opponent-specific improvement?
+
+### Fixed-opponent vs adaptive-opponent testing
+
+Separate:
+
+```text
+Adaptive Council vs frozen opponent
+```
+
+from:
+
+```text
+Adaptive Council vs adaptive opponent
+```
+
+The second is a coevolution experiment and should not be interpreted as ordinary static engine ranking.
+
+---
+
+## 55. Project-level falsification
 
 The architecture should be considered unsuccessful in its current form if most of the following occur:
 
@@ -1270,11 +1708,14 @@ The architecture should be considered unsuccessful in its current form if most o
 - opponent modelling does not improve prediction;
 - better prediction does not improve play;
 - dynamic vulnerability adds no value over static targeting;
+- persistent opponent state produces no meaningful adaptation;
+- targeted training produces no gain beyond observation-only adaptation;
+- adaptive compute allocation produces no net value;
 - model-specific compute dominates any practical benefit.
 
 ---
 
-## 55. Negative results
+## 56. Negative results
 
 Negative results should be treated as valid project outcomes.
 
@@ -1297,11 +1738,21 @@ but exploitation does not."
 "Strong Lc0 already dominates every opponent-specific advantage."
 ```
 
+```text
+"Persistent opponent memory improves prediction
+but not match performance."
+```
+
+```text
+"Triggered training adds compute
+without improving late-match score."
+```
+
 Such results would meaningfully reduce the hypothesis space.
 
 ---
 
-## 56. Final experimental principle
+## 57. Final experimental principle
 
 > **Do not ask whether the architecture sounds intelligent.**
 >

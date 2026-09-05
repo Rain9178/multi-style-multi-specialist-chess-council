@@ -72,9 +72,10 @@ Possible alternative explanations include:
 - larger parameter count;
 - better opening selection;
 - more training data;
-- implementation asymmetry.
+- implementation asymmetry;
+- access to additional distributed compute.
 
-The experimental programme must control these possibilities.
+The experimental programme must control or explicitly report these possibilities.
 
 ---
 
@@ -758,6 +759,8 @@ Style classifiers may reuse training labels.
 
 Opening suites may be tuned after seeing results.
 
+Adaptive experiments may accidentally reuse opponent-specific state that should have been reset.
+
 These forms of leakage can invalidate conclusions.
 
 ---
@@ -768,7 +771,8 @@ The project should avoid selecting only:
 
 - visually impressive games;
 - successful exploitations;
-- favourable Style examples.
+- favourable Style examples;
+- favourable late-match adaptation windows.
 
 Full match and experiment distributions should be reported.
 
@@ -794,7 +798,10 @@ Examples include:
 - hierarchical control;
 - temporal abstraction;
 - weakness exploitation;
-- human move prediction.
+- human move prediction;
+- continual learning;
+- adversarial training;
+- adaptive compute allocation.
 
 The project should not turn a new combination into an unsupported claim of first discovery.
 
@@ -919,6 +926,8 @@ Unresolved questions include:
 - how is intervention strength calibrated?
 - when should Plan continuity break?
 - what search exceptions should be exposed?
+- when should the Router emit a TrainingRequest?
+- how should strategic urgency be communicated without giving the Router training authority?
 
 ---
 
@@ -932,7 +941,10 @@ Unresolved questions include:
 - Which matchmaking scheme?
 - How large should the Archive become?
 - What triggers new population members?
-- How should style collapse be prevented?
+- How should Style collapse be prevented?
+- How should self-red-team diversity be maintained?
+- Which successful attackers deserve long-term retention?
+- How should related exploiters be clustered or compressed?
 
 ---
 
@@ -948,18 +960,37 @@ Unresolved questions include:
 - how much Sentinel budget is useful?
 - how should Mode Shift be detected?
 - how should ModelTrust be estimated?
+- which opponent information should persist across games?
+- how should stale opponent memory be detected?
 
 ---
 
 ## 68. Open adaptation questions
 
-Unresolved questions include:
+Opponent-model adaptation questions include:
 
-- which parameters may adapt online?
-- what is the adaptation radius?
+- which Shadow parameters may adapt online?
+- what is the Shadow adaptation radius?
 - when should a Shadow be modified vs replaced?
-- how should adaptation be rolled back?
 - how should Shadow identity be preserved?
+
+Playing-policy adaptation questions include:
+
+- what may adapt during a game?
+- what may adapt only between games?
+- when should a TrainingRequest be emitted?
+- which parameters may a temporary response branch modify?
+- how should adaptation be rolled back?
+- how long should a temporary branch survive?
+- when should an opponent-specific specialist become general?
+- how should the stable base policy remain recoverable?
+
+Training-side questions include:
+
+- how should TrainingValue be estimated?
+- what minimum evidence justifies targeted training?
+- how much distributed compute should one request receive?
+- when should a failed request be archived rather than retried?
 
 ---
 
@@ -973,6 +1004,8 @@ Unresolved questions include:
 - how should vulnerability confidence decay?
 - how many graph transitions should be retained?
 - how should repair-induced weaknesses be validated?
+- when is a weakness stable enough to justify targeted training?
+- can weakness amplification generalize beyond one opponent?
 
 ---
 
@@ -987,10 +1020,275 @@ Unresolved questions include:
 - which human evaluators?
 - which effect sizes count as practically meaningful?
 - how much additional compute is acceptable?
+- how should OFF / OBSERVE / ADAPT be standardized?
+- how should adaptation curves be measured?
+- how should encounter order be controlled?
+- how should frozen-opponent and adaptive-opponent experiments be separated?
+- what is a fair within-game adaptation budget?
+- what is a fair between-game or distributed training budget?
 
 ---
 
-## 71. Removal principle
+# Additional Risks Introduced by Adaptive Feedback
+
+## 71. Training-trigger false positives
+
+A new adaptive loop introduces a new failure mode:
+
+```text
+opponent behaviour
+↓
+system infers high TrainingValue
+↓
+TRAIN_REQUEST
+↓
+expensive training
+```
+
+even when the pattern is:
+
+- noise;
+- transient;
+- opponent-specific in an uninteresting way;
+- already covered by existing capability.
+
+False-positive training requests can waste substantial resources.
+
+The trigger therefore needs its own:
+
+- precision;
+- recall;
+- calibration;
+- ablation.
+
+---
+
+## 72. Training-trigger mechanisms may be adversarially manipulated
+
+A sufficiently adaptive opponent may deliberately produce behaviour that appears:
+
+- novel;
+- dangerous;
+- reproducible;
+- strategically important;
+
+in order to induce unnecessary training.
+
+This creates a possible:
+
+> **adaptation-compute denial-of-service**
+
+failure mode.
+
+The system should not assume that an apparently valuable training target is benignly generated.
+
+Independent evaluation and budget limits remain necessary.
+
+---
+
+## 73. Predictability and TrainingValue may be confused
+
+A weak opponent that behaves randomly may be difficult to predict.
+
+That does not imply:
+
+> expensive adaptation is useful.
+
+Conversely, a relatively predictable opponent may reveal one narrow but highly reusable exploit against the current system.
+
+Therefore:
+
+\[
+Predictability
+\neq
+TrainingValue
+\]
+
+Failure to preserve this distinction may cause severe compute misallocation.
+
+---
+
+## 74. Event-triggered deep deliberation may misallocate clock time
+
+Deep deliberation has two symmetric failure modes.
+
+### False escalation
+
+The system spends large amounts of real match time on a situation that did not require it.
+
+### Missed escalation
+
+A genuinely critical strategic surprise is treated as ordinary play.
+
+Possible costs include:
+
+- later time pressure;
+- reduced search quality later in the game;
+- wasted distributed compute;
+- overreaction to noisy evaluation swings.
+
+The system must evaluate:
+
+\[
+ValueOfMoreCompute
+\]
+
+against:
+
+\[
+TimeCost + ComputeCost + FutureClockCost
+\]
+
+rather than simply “thinking longer when surprised.”
+
+---
+
+## 75. Weakness amplification may amplify a false hypothesis
+
+Weakness Amplification increases the consequences of an inference error.
+
+Without targeted training, a false vulnerability may only cause poor routing.
+
+With targeted training, it may cause:
+
+- specialist overfitting;
+- distorted state distributions;
+- excessive steering toward the wrong target;
+- general-strength regression;
+- wasted training compute.
+
+Therefore:
+
+> weakness confirmation and weakness amplification must remain separate stage gates.
+
+---
+
+## 76. Self-red-teaming may create a closed ecological blind spot
+
+A system may become highly robust against:
+
+- its own Main policies;
+- its own Exploiters;
+- its own historical population;
+
+while remaining vulnerable to strategies outside that ecology.
+
+Therefore:
+
+\[
+RobustnessToOwnPopulation
+\neq
+GlobalRobustness
+\]
+
+External engines, unseen policies, unusual strategy families, and out-of-distribution testing remain necessary.
+
+---
+
+## 77. Persistent opponent memory may become stale or contaminated
+
+Cross-game memory can create errors when:
+
+- the opponent changes version;
+- a human player's behaviour changes;
+- two opponent identities are confused;
+- a previously real weakness has been repaired;
+- old summaries dominate recent evidence.
+
+Persistent memory therefore requires:
+
+- provenance;
+- versioning;
+- decay;
+- confidence revision;
+- reset conditions.
+
+Memory should not become permanent truth.
+
+---
+
+## 78. Archive compression may erase rare but important threats
+
+Representative or clustered archives save compute and storage.
+
+However, compression may accidentally remove:
+
+- rare counter-strategies;
+- narrow historical exploits;
+- strategically important outliers.
+
+A representative Archive therefore trades:
+
+\[
+Efficiency
+\]
+
+against:
+
+\[
+Coverage
+\]
+
+and must be tested for regression blind spots.
+
+---
+
+## 79. Adaptive-vs-adaptive strength is non-stationary
+
+If both systems learn:
+
+\[
+\pi_A(t)
+\]
+
+and:
+
+\[
+\pi_B(t)
+\]
+
+then match outcome depends on:
+
+- starting checkpoints;
+- game order;
+- adaptation budget;
+- retained history;
+- training speed;
+- deployment timing.
+
+A single Elo number may become difficult to interpret.
+
+Adaptive matches should therefore distinguish:
+
+> static strength
+
+from:
+
+> learning dynamics and coevolutionary performance.
+
+---
+
+## 80. Asynchronous distributed training may become stale
+
+A globally distributed training system may produce a candidate specialist based on:
+
+- an older Main checkpoint;
+- an older opponent model;
+- an earlier vulnerability;
+- a previous match state.
+
+By deployment time, the target may have changed.
+
+Training requests and candidate policies may therefore require:
+
+- checkpoint identity;
+- opponent/model version;
+- target-vulnerability version;
+- freshness checks.
+
+---
+
+## 81. Removal principle
 
 Every mechanism should have a clear removal condition.
 
@@ -1016,9 +1314,24 @@ Style × Expert ≈ generic conditional model
 → simplify factorization
 ```
 
+```text
+Triggered training ≈ OBSERVE
+→ remove or simplify triggered training
+```
+
+```text
+Event-triggered compute ≈ fixed compute
+→ use simpler compute scheduling
+```
+
+```text
+Value-gated Archive provides no benefit
+→ simplify retention policy
+```
+
 ---
 
-## 72. Final risk principle
+## 82. Final risk principle
 
 > **The architecture should remain easier to falsify than to defend rhetorically.**
 

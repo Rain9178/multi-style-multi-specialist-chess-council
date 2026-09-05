@@ -16,7 +16,8 @@ The project investigates whether several normally separate functions can coexist
 3. measurable specialist Expertise;
 4. population-based training pressure;
 5. online opponent inference;
-6. controlled opponent-specific exploitation.
+6. controlled opponent-specific exploitation;
+7. selective adaptation across multiple timescales.
 
 The architecture is intentionally decomposable.
 
@@ -54,9 +55,81 @@ Unless explicitly updated in the future, all project-level integrations remain u
 
 ## 3. Architectural overview
 
-The proposal contains two major timescales.
+The proposal operates across multiple timescales.
 
-### Offline / slow loop
+These timescales are conceptual.
+
+A future implementation may combine, subdivide, or omit some of them.
+
+### 3.1 Online / fast loop
+
+Used continuously or nearly continuously for:
+
+- analysing the current position;
+- base-engine search;
+- maintaining CandidateSet;
+- updating opponent evidence;
+- maintaining Shadow hypotheses;
+- estimating vulnerabilities;
+- maintaining a lightweight Plan;
+- controlling opponent-specific strategic influence.
+
+### 3.2 Event-triggered deliberation loop
+
+Activated selectively when ordinary incremental processing may no longer be sufficient.
+
+Possible triggers include:
+
+- major evaluation shock;
+- tactical refutation;
+- repeated prediction failure;
+- severe Shadow disagreement;
+- Plan invalidation;
+- unexpected Mode Shift;
+- newly supported high-impact vulnerability;
+- evidence that the system itself may be entering an unfamiliar failure regime.
+
+Possible responses include:
+
+- deeper or broader base search;
+- increased Shadow compute;
+- renewed Challenger / Sentinel coverage;
+- Plan reconstruction;
+- current-position rollout;
+- temporary strategic-response exploration;
+- requests for more expensive adaptation.
+
+This is not intended to impose a fixed amount of “emergency thinking.”
+
+Additional computation should be justified by expected value relative to:
+
+- remaining clock time;
+- compute cost;
+- uncertainty;
+- potential position recovery;
+- risk of overfitting.
+
+### 3.3 Match-scale / intermediate adaptation
+
+Some adaptation may occur across:
+
+- several moves;
+- one game;
+- a short match;
+- repeated encounters with the same opponent.
+
+Possible mechanisms include:
+
+- Style / Expertise reweighting;
+- opponent-model refinement;
+- local adapter or latent adjustment;
+- temporary response branches;
+- opponent-specific summaries;
+- selective policy or specialist activation.
+
+This layer should remain bounded and experimentally controlled.
+
+### 3.4 Offline / slow training loop
 
 Used for:
 
@@ -64,75 +137,82 @@ Used for:
 - developing Style and Expertise;
 - evaluating specialist capability;
 - optional population / League training;
-- maintaining historical policies.
-
-### Online / fast loop
-
-Used for:
-
-- analysing the current position;
-- modelling the current opponent;
-- maintaining Shadow hypotheses;
-- estimating vulnerabilities;
-- maintaining a lightweight Plan;
-- controlling opponent-specific strategic influence.
+- active self-red-teaming;
+- maintaining historical policies;
+- training Exploiters;
+- validating candidate specialists;
+- regression testing;
+- maintaining training archives.
 
 Conceptually:
 
 ```text
-                    OFFLINE / SLOW LOOP
+                    OFFLINE / SLOW TRAINING LOOP
 
-┌───────────────────────────────────────────────────────┐
-│                                                       │
-│  Shared Chess Backbone                               │
-│          ↓                                            │
-│  Style / Expertise Conditioning                      │
-│          ↓                                            │
-│  Specialist & Behaviour Evaluation                   │
-│          ↓                                            │
-│  Optional Population / League Training               │
-│          ↓                                            │
-│  Evaluator → Payoff State → Matchmaking              │
-│          ↓                                            │
-│  Updated / Archived Policies                         │
-│                                                       │
-└───────────────────────────────────────────────────────┘
-
-
-                     ONLINE / FAST LOOP
-
-┌───────────────────────────────────────────────────────┐
-│                                                       │
-│  Position + Game History                             │
-│          ↓                                            │
-│  Base Engine / Search → CandidateSet                 │
-│          ↓                                            │
-│  Opponent Modelling                                  │
-│     ├─ Recognizer                                    │
-│     └─ Shadow Ensemble                               │
-│          ↓                                            │
-│  OpponentModelState                                  │
-│          ↓                                            │
-│  Vulnerability Hypotheses                            │
-│          ↓                                            │
-│  Router + PlanState                                  │
-│          ↕                                            │
-│  Base Search / Verification                          │
-│          ↓                                            │
-│  Quality-Constrained Candidate Selection             │
-│          ↓                                            │
-│  Move                                                │
-│          ↓                                            │
-│  Real Opponent Response → New Evidence               │
-│                                                       │
-└───────────────────────────────────────────────────────┘
+┌──────────────────────────────────────────────────────────┐
+│                                                          │
+│  Shared Chess Backbone                                   │
+│          ↓                                               │
+│  Style / Expertise Conditioning                          │
+│          ↓                                               │
+│  Specialist & Behaviour Evaluation                       │
+│          ↓                                               │
+│  Optional Population / League Training                   │
+│          ↓                                               │
+│  Main / Exploiter / Historical Policies                  │
+│          ↓                                               │
+│  Evaluator → Payoff State → Matchmaking                  │
+│          ↓                                               │
+│  Validated / Archived Policies                           │
+│                                                          │
+└──────────────────────────────────────────────────────────┘
+                         ↑
+                         │
+            validated training requests
+                         │
+                         │
+┌──────────────────────────────────────────────────────────┐
+│                                                          │
+│               ONLINE / MATCH-SCALE SYSTEM                │
+│                                                          │
+│  Position + Game History                                 │
+│          ↓                                               │
+│  Base Engine / Search → CandidateSet                     │
+│          ↓                                               │
+│  Opponent Modelling                                      │
+│     ├─ Recognizer                                        │
+│     └─ Shadow Ensemble                                   │
+│          ↓                                               │
+│  OpponentModelState                                      │
+│          ↓                                               │
+│  Vulnerability Hypotheses                                │
+│          ↓                                               │
+│  Router + PlanState                                      │
+│          ↕                                               │
+│  Base Search / Verification                              │
+│          ↓                                               │
+│  Quality-Constrained Candidate Selection                 │
+│          ↓                                               │
+│  Move                                                    │
+│          ↓                                               │
+│  Real Opponent Response → New Evidence                   │
+│                                                          │
+│  High-value discovery                                    │
+│          ↓                                               │
+│  Optional TRAIN_REQUEST / ADAPTATION_REQUEST              │
+│                                                          │
+└──────────────────────────────────────────────────────────┘
 ```
 
-The two loops interact, but they are not the same system.
+The loops interact, but they are not the same system.
 
 In particular:
 
 > **Offline League policies are not the same thing as online Shadow hypotheses.**
+
+And:
+
+> **League roles such as Main, Exploiter, and Historical policy are training roles or policy lineages, not online Style / Expertise labels.**
 
 ---
 
@@ -210,6 +290,16 @@ Expertise
 \]
 
 is a project hypothesis.
+
+Style / Expertise describe strategic conditioning.
+
+They do not define League roles such as:
+
+- Main;
+- Exploiter;
+- Historical policy.
+
+A Main policy may itself support many Style × Expertise configurations.
 
 ---
 
@@ -425,7 +515,26 @@ opponent-specific intervention strength
 active Plan
 Shadow compute allocation
 fallback state
+adaptation mode
 ```
+
+### TrainingRequest
+
+An optional message indicating that an observed pattern may justify more expensive training-side investigation.
+
+Possible contents:
+
+```text
+trigger reason
+target opponent / policy family
+relevant vulnerability
+evidence strength
+estimated reusable value
+urgency
+current compute context
+```
+
+A `TrainingRequest` is not itself a training action.
 
 These are conceptual interfaces, not mandatory software classes.
 
@@ -497,6 +606,10 @@ A low-probability Challenger may receive substantial compute because it is highl
 
 That extra compute does not itself increase the probability of the hypothesis.
 
+The same separation should also apply to training requests:
+
+> Receiving more training compute must not itself increase the evidential credibility of the hypothesis that triggered the request.
+
 ---
 
 ## 13. Router `[A+B+C]`
@@ -515,7 +628,8 @@ Possible inputs include:
 - vulnerability hypotheses;
 - PlanState;
 - switching cost;
-- search exceptions.
+- search exceptions;
+- available compute information.
 
 Possible outputs include:
 
@@ -524,7 +638,8 @@ Possible outputs include:
 - target vulnerability;
 - Plan continue / reconsider / terminate;
 - opponent-specific intervention strength;
-- compute-budget guidance.
+- compute-budget guidance;
+- optional `TRAIN_REQUEST` or `ADAPTATION_REQUEST`.
 
 ### Router boundary
 
@@ -537,6 +652,15 @@ rather than:
 > **what the objectively best chess move is from scratch.**
 
 That remains the responsibility of the base chess system and its search.
+
+Likewise, the Router may request more expensive adaptation, but it should not directly:
+
+- run League training;
+- overwrite the shared backbone;
+- promote candidate policies;
+- control the training archive.
+
+Those functions belong to the training-side process, evaluator, or equivalent budget / deployment logic.
 
 ---
 
@@ -605,6 +729,18 @@ For example, repairing a kingside weakness may consume defensive resources and e
 
 The graph stores **hypotheses**, not claims that the system knows the opponent's true weaknesses.
 
+A later-stage extension may also ask whether a confirmed weakness can be amplified through targeted training.
+
+That distinction is important:
+
+```text
+Weakness detection
+≠
+Weakness amplification
+```
+
+The second requires separate experimental evidence.
+
 ---
 
 ## 16. Online Shadow Ensemble vs offline League
@@ -630,7 +766,85 @@ A Shadow may reuse representations learned offline, but:
 
 > a Shadow is not automatically a League Agent.
 
-The online system should not require full policy training during a single game.
+### League roles vs strategic conditioning
+
+Main / Exploiter / Historical describe training roles or policy lineages.
+
+Style / Expertise describe strategic conditioning or capability dimensions.
+
+Therefore:
+
+```text
+Main
+≠
+Style
+
+Exploiter
+≠
+Expert
+
+Historical policy
+≠
+Shadow
+```
+
+A Main policy may use multiple Style × Expertise configurations.
+
+An Exploiter may also use any Style or Expertise configuration useful for exposing a weakness.
+
+### Active self-red-teaming `[A+B]`
+
+A later-stage League may deliberately train policies whose objective is to expose weaknesses in:
+
+- current Main policies;
+- specialist policies;
+- Router assumptions;
+- opponent-modelling assumptions;
+- historical regression resistance.
+
+A successful attack should not automatically be treated as proof of a permanent defect.
+
+It should instead become:
+
+```text
+candidate exploit
+↓
+replication
+↓
+evaluation
+↓
+training pressure / archive decision
+```
+
+The purpose is to reduce known exploitability, not to claim that all possible counter-strategies have been exhausted.
+
+### Online-training boundary
+
+The online system should not require full policy retraining during every game.
+
+Ordinary play should normally rely on:
+
+- base search;
+- existing policies;
+- Router control;
+- opponent-model updates;
+- bounded local adaptation.
+
+However, sufficiently important events may optionally trigger:
+
+- asynchronous targeted training;
+- temporary response branches;
+- limited specialist adaptation;
+- current-position rollout.
+
+Such adaptation should remain:
+
+- bounded;
+- separately logged;
+- experimentally controlled;
+- reversible or safely bypassable.
+
+Unrestricted in-game replacement of the shared chess backbone is not a design requirement.
 
 ---
 
@@ -723,13 +937,16 @@ Possible applications include:
 - Plan persistence;
 - opponent-specific intervention;
 - Shadow retirement and revival;
-- Mode-shift response.
+- Mode-shift response;
+- adaptation escalation and de-escalation.
 
 This is a design principle, not a separate global module.
 
 ---
 
-## 20. Slow and fast variables
+## 20. Multiple adaptation timescales
+
+The architecture should not assume that every variable changes at the same speed.
 
 ### Slow variables
 
@@ -739,7 +956,18 @@ Examples include:
 - trained Style/Expert modules;
 - League population;
 - historical policies;
+- validated specialists;
 - durable opponent Trait estimates when sufficient evidence exists.
+
+### Intermediate variables
+
+Examples may include:
+
+- match-level opponent summaries;
+- temporary response branches;
+- bounded adapter state;
+- opponent-specific specialist activation;
+- targeted training candidates.
 
 ### Fast variables
 
@@ -757,6 +985,10 @@ Examples include:
 
 A short-term Mode change should not automatically rewrite a long-term Trait estimate.
 
+Likewise:
+
+> a short-term online success should not automatically rewrite a long-term Main policy.
+
 ---
 
 ## 21. Per-turn online lifecycle
@@ -770,12 +1002,15 @@ A conceptual turn may proceed as follows:
 5. Update OpponentModelState.
 6. Update vulnerability hypotheses.
 7. Check whether the current Plan remains valid.
-8. Router determines strategic control context.
-9. Base search validates or rejects strategically biased alternatives.
-10. Apply the Quality Gate.
-11. Select and play a move.
-12. Observe the real opponent response.
-13. Use that real response as new evidence.
+8. Estimate whether ordinary incremental processing remains sufficient.
+9. If necessary, increase deliberation or adaptation budget.
+10. Router determines strategic control context.
+11. Base search validates or rejects strategically biased alternatives.
+12. Apply the Quality Gate.
+13. Select and play a move.
+14. Observe the real opponent response.
+15. Use that real response as new evidence.
+16. If a high-value reusable pattern is detected, optionally emit a training-side request.
 
 This sequence is conceptual.
 
@@ -807,6 +1042,12 @@ Belief update
 
 This prevents the Recognizer and Shadow system from creating self-confirming synthetic evidence.
 
+The same principle applies to training:
+
+> A policy generated because a vulnerability was hypothesized does not prove that the vulnerability is real.
+
+Only external evaluation and real or controlled opponent behaviour can provide that evidence.
+
 ---
 
 ## 23. Fallback invariant
@@ -829,9 +1070,11 @@ The opponent model does not need to be deleted.
 
 It may continue gathering evidence while having less influence on actual moves.
 
+Likewise, failed or uncertain adaptive branches should not require overwriting the stable base policy.
+
 ---
 
-## 24. Event-triggered reconsideration
+## 24. Event-triggered reconsideration and deep deliberation
 
 Not every expensive strategic computation needs to restart from zero every ply.
 
@@ -848,7 +1091,78 @@ Major reconsideration may be triggered by:
 - prediction failure;
 - Mode Shift;
 - newly supported vulnerability;
-- major Shadow disagreement.
+- major Shadow disagreement;
+- evidence of model-family failure;
+- unexpectedly high-value opponent behaviour.
+
+### Event-Triggered Deep Deliberation `[B+C]`
+
+A stronger response may be justified when ordinary processing appears insufficient.
+
+Possible escalation:
+
+```text
+Normal search
+↓
+Additional search / verification
+↓
+Strategic reconsideration
+↓
+Expanded Shadow / Challenger analysis
+↓
+Current-position rollout
+↓
+Bounded local adaptation
+↓
+Optional targeted training request
+```
+
+This escalation should be **value-driven**, not duration-driven.
+
+The system should not contain a rule such as:
+
+```text
+"Emergency detected → think exactly 20 minutes."
+```
+
+Instead, additional computation should continue only while its expected marginal value remains justified.
+
+Possible considerations include:
+
+- remaining clock time;
+- current evaluation;
+- irreversibility;
+- novelty;
+- uncertainty;
+- model failure;
+- expected recovery;
+- reusable training value;
+- compute cost.
+
+### Temporary response branches `[C]`
+
+One possible implementation is to branch from a stable policy into temporary response candidates.
+
+For example:
+
+```text
+stable policy
+├─ response branch A
+├─ response branch B
+├─ response branch C
+└─ response branch D
+```
+
+These branches may explore different reactions without immediately modifying the stable policy.
+
+A temporary branch may later be:
+
+- discarded;
+- archived;
+- retained as an opponent-specific specialist;
+- promoted to broader evaluation.
+
+This is a candidate implementation, not a required module.
 
 ---
 
@@ -861,11 +1175,11 @@ Conceptually:
 ```text
 Style / Expert / Opponent-specific proposals
                     ↓
-            Shared CandidateSet
+             Shared CandidateSet
                     ↓
-           Shared strong verification
+            Shared strong verification
                     ↓
-          Quality-constrained choice
+           Quality-constrained choice
 ```
 
 This allows:
@@ -875,6 +1189,10 @@ This allows:
 without requiring:
 
 > independent basic chess safety for every module.
+
+The same principle should normally apply to candidate adaptive responses.
+
+A proposed specialist or response branch should still be subject to strong chess verification.
 
 ---
 
@@ -912,7 +1230,9 @@ It does not require:
 - League training;
 - Shadow opponents;
 - vulnerability graphs;
-- online neural adaptation.
+- online neural adaptation;
+- triggered training;
+- self-red-teaming.
 
 ---
 
@@ -944,9 +1264,23 @@ Opponent-specific exploitation
 Dynamic vulnerability transitions
 ↓
 Optional active probing
+↓
+Selective cross-game memory
+↓
+Value-gated training requests
+↓
+Triggered specialist / Exploiter training
+↓
+Active self-red-teaming
+↓
+Event-triggered adaptive deliberation
 ```
 
 A later stage is not mandatory if an earlier hypothesis fails.
+
+The ordering is conceptual rather than mandatory.
+
+Some implementations may test later ideas in isolation.
 
 ---
 
@@ -964,7 +1298,10 @@ Unless future experiments strongly justify a change:
 8. Low-probability hypotheses are preferably soft-pruned rather than permanently erased.
 9. Evaluation and training remain distinct.
 10. Offline League agents and online Shadows remain distinct.
-11. Complex modules must survive ablation.
+11. League roles remain distinct from online Style / Expertise control.
+12. Training requests do not themselves validate the hypotheses that triggered them.
+13. A stable base policy should remain recoverable during bounded adaptation.
+14. Complex modules must survive ablation.
 
 ---
 
@@ -978,8 +1315,13 @@ The architecture does not require:
 - a second full engine inside the Router;
 - natural-language strategic planning;
 - unlimited in-game gradient updates;
+- mandatory in-game training;
+- a fixed emergency-thinking duration;
 - exact reproduction of AlphaStar;
-- a fixed number of final personalities.
+- a fixed number of Main policies;
+- a fixed number of final personalities;
+- permanent storage of every encountered opponent;
+- recursive opponent modelling without bound.
 
 ---
 
@@ -993,6 +1335,10 @@ The architecture should be simplified if:
 - online opponent modelling does not improve prediction;
 - improved prediction does not improve actual play;
 - vulnerability modelling adds no value;
+- targeted adaptation produces only narrow overfitting;
+- archive growth produces more cost than robustness;
+- event-triggered computation does not outperform simpler allocation;
+- self-red-teaming adds compute without meaningful robustness;
 - compute and engineering costs overwhelm the observed benefit.
 
 The architecture is therefore intended to be:

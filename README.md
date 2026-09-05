@@ -133,6 +133,12 @@ A reduced AlphaStar-inspired population ecosystem may eventually contain:
 - prioritized matchmaking;
 - an Active Pool and Archive.
 
+League roles such as **Main**, **Exploiter**, and **Historical policy** describe training roles or policy lineages.
+
+They are distinct from online **Style / Expertise** control.
+
+A Main policy therefore does not need to correspond to one fixed Style × Expertise configuration.
+
 The project does **not** assume that chess needs an AlphaStar-like League.
 
 Whether a League adds measurable value beyond simpler chess self-play is an experimental question.
@@ -160,6 +166,58 @@ If opponent-specific evidence becomes sufficiently reliable, a strategic Router 
 to bias play toward potentially exploitable regions.
 
 The base chess system retains a fallback role.
+
+### 3.8 Selective adaptive feedback
+
+A later-stage system may operate across several timescales.
+
+Most moves should rely on:
+
+- existing chess competence;
+- search;
+- Router control;
+- opponent-model updates;
+- bounded local state changes.
+
+When a sufficiently important and reusable pattern is detected, the online system may optionally produce a:
+
+```text
+TRAIN_REQUEST
+```
+
+or equivalent request for training-side investigation.
+
+Such a request does **not** prove that:
+
+- the inferred weakness is real;
+- training is necessary;
+- more compute should increase belief;
+- a new policy should be deployed.
+
+The training ecosystem must independently decide whether to:
+
+- reproduce the finding;
+- reject it;
+- allocate additional compute;
+- train a candidate specialist or Exploiter;
+- archive the pattern;
+- deploy nothing.
+
+This creates a proposed feedback path:
+
+```text
+Online discovery
+↓
+Training-side investigation
+↓
+Independent evaluation
+↓
+Validated capability
+↓
+Optional deployment
+```
+
+The effectiveness of this feedback loop remains an experimental question.
 
 ---
 
@@ -228,7 +286,11 @@ Preferring tactical positions does not prove that an agent is tactically stronge
 ### Rule 2 — Belief, compute, and control are different
 
 \[
-\text{Belief} \neq \text{Compute Allocation} \neq \text{Control Commitment}
+\text{Belief}
+\neq
+\text{Compute Allocation}
+\neq
+\text{Control Commitment}
 \]
 
 A hypothesis may be likely without receiving all compute.
@@ -265,7 +327,10 @@ This project is not:
 - a simple majority-voting council;
 - an online chess cheating tool;
 - an anti-cheat evasion system;
-- a claim that the proposed opponent-exploitation mechanisms are already effective.
+- a claim that the proposed opponent-exploitation mechanisms are already effective;
+- a claim that continual adaptation necessarily improves playing strength;
+- a requirement to train during every game;
+- a claim that all possible counter-strategies can be exhausted.
 
 The word **Council** refers to the conceptual combination and routing of differentiated strategic capabilities.
 
@@ -278,6 +343,7 @@ It does not require ten independent full chess engines voting on every move.
 ```text
 README.md
 CONTRIBUTING.md
+LICENSE
 
 docs/
 ├── ARCHITECTURE.md
@@ -288,3 +354,100 @@ docs/
 ├── EXPERIMENTS_AND_VALIDATION.md
 ├── RISKS_AND_OPEN_QUESTIONS.md
 └── PROVENANCE_AND_DECISIONS.md
+```
+
+---
+
+## 8. License and attribution
+
+The architecture documentation in this repository is licensed under:
+
+> **Creative Commons Attribution 4.0 International — CC BY 4.0**
+
+The preferred attribution name for the architecture proposal is:
+
+> **Unimplemented Bishop**
+
+A simple attribution form is:
+
+```text
+Architecture based on the
+Multi-Style Multi-Specialist Chess Council proposal
+by Unimplemented Bishop.
+```
+
+The repository `LICENSE` file provides the governing documentation-license notice.
+
+Third-party:
+
+- engines;
+- models;
+- datasets;
+- libraries;
+- code;
+
+retain their own licenses.
+
+If source code is added in the future, it may use a separate software license.
+
+---
+
+## 9. Recommended reading order
+
+For a first reading:
+
+```text
+README
+↓
+ARCHITECTURE
+↓
+STYLES_AND_EXPERTS
+↓
+TRAINING_ECOSYSTEM
+↓
+OPPONENT_MODELING
+↓
+ROUTING_AND_EXPLOITATION
+↓
+EXPERIMENTS_AND_VALIDATION
+↓
+RISKS_AND_OPEN_QUESTIONS
+↓
+PROVENANCE_AND_DECISIONS
+```
+
+Readers primarily interested in implementation may begin with:
+
+```text
+ARCHITECTURE
+↓
+EXPERIMENTS_AND_VALIDATION
+```
+
+Readers primarily interested in scientific provenance may additionally prioritize:
+
+```text
+PROVENANCE_AND_DECISIONS
+```
+
+---
+
+## 10. Final repository principle
+
+The architecture should be treated as:
+
+> **a set of testable hypotheses, not a protected design.**
+
+A future implementation should be free to:
+
+- simplify it;
+- remove components;
+- replace mechanisms;
+- reject hypotheses;
+- preserve only the parts that survive controlled testing.
+
+Positive results are useful.
+
+Negative results are also useful.
+
+The project succeeds scientifically when it reduces uncertainty about which ideas actually provide value.

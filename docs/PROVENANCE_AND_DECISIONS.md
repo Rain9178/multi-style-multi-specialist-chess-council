@@ -88,7 +88,7 @@ Formal academic novelty requires dedicated literature review.
 
 ## 4. Current validation state
 
-At the time of the initial architecture proposal:
+At the time of the architecture proposal:
 
 | Item | State |
 |---|---|
@@ -99,8 +99,15 @@ At the time of the initial architecture proposal:
 | League experiment | None |
 | Shadow experiment | None |
 | Vulnerability experiment | None |
+| Adaptive-training experiment | None |
 | Empirical validation | None |
 | Superiority claim | None |
+
+The architecture has continued to evolve conceptually, but the validation state remains:
+
+> **Unimplemented / Untested**
+
+unless explicitly updated by future evidence.
 
 ---
 
@@ -117,7 +124,7 @@ The project does not claim to improve or replace the AlphaZero paradigm.
 
 Its question is different:
 
-> can additional Style, Expertise, population, and opponent-specific structure provide useful capabilities beyond a strong general chess system?
+> can additional Style, Expertise, population, opponent-specific, and adaptive structure provide useful capabilities beyond a strong general chess system?
 
 ---
 
@@ -184,7 +191,7 @@ A future implementation must separately comply with Stockfish licensing.
 
 Sharing general representations across related tasks is established machine-learning practice.
 
-The project uses this principle to avoid relearning fundamental chess competence for every Style, Expert, or opponent hypothesis.
+The project uses this principle to avoid relearning fundamental chess competence for every Style, Expert, Shadow, or League role.
 
 ---
 
@@ -225,7 +232,7 @@ The particular Style/Expert factorization remains unvalidated.
 
 Dynamic routing among experts is established prior art.
 
-Recent chess research has also explored learned routing among strong chess engines.
+Chess research has also explored learned routing or combination among chess policies and engines.
 
 Therefore this project must not claim novelty for:
 
@@ -243,6 +250,8 @@ The project-specific question is whether routing can combine:
 - opponent belief;
 - vulnerability hypotheses;
 - dynamic intervention;
+- compute guidance;
+- optional training-side requests;
 
 while remaining subordinate to a shared strong chess search.
 
@@ -264,7 +273,7 @@ The exact gate definition is project-specific and unvalidated.
 
 ## 16. Style representation `[B+C]`
 
-The candidate Style dimensions include concepts such as:
+Candidate Style dimensions include concepts such as:
 
 - initiative;
 - risk;
@@ -359,6 +368,7 @@ The project adapts temporal persistence into a lightweight chess control state c
 - target;
 - active Style/Expert mixture;
 - minimum tenure;
+- continuation conditions;
 - termination;
 - break conditions.
 
@@ -375,7 +385,8 @@ The project adapts them to:
 - Router intervention;
 - Plan persistence;
 - Shadow activation;
-- vulnerability commitment.
+- vulnerability commitment;
+- adaptation escalation and de-escalation.
 
 ---
 
@@ -685,8 +696,6 @@ This mechanism is explicitly optional.
 
 # Historical Design Corrections
 
----
-
 ## 43. Correction: Style and Expertise as orthogonal axes
 
 ### Original idea
@@ -938,7 +947,7 @@ More compute assigned to a Shadow makes it more credible.
 Belief\neq Compute
 \]
 
-Compute can produce new predictions or evidence.
+Compute can produce new predictions or analysis.
 
 It is not evidence itself.
 
@@ -1126,8 +1135,6 @@ Population size and active strategic configurations should be evidence-driven.
 
 # Explicitly Postponed or Rejected Directions
 
----
-
 ## 64. Hundreds of complete independent networks
 
 Not part of the current core architecture.
@@ -1166,7 +1173,19 @@ Use lightweight PlanState.
 
 Not recommended.
 
-Early online adaptation should remain lightweight and bounded.
+The project does not require unrestricted modification of the shared chess backbone during a game.
+
+Early and match-scale adaptation should prefer:
+
+- lightweight state updates;
+- bounded parameter changes;
+- temporary response branches;
+- reversible adaptation;
+- asynchronous targeted training where experimentally justified.
+
+Event-triggered targeted adaptation remains a candidate mechanism.
+
+Unlimited or uncontrolled online retraining does not.
 
 ---
 
@@ -1181,6 +1200,8 @@ Explicitly forbidden by the inference design.
 Rejected because:
 
 > preserving policies and frequently training against all policies are different costs.
+
+Historical policies may be retained without requiring uniform or permanent active training against every one of them.
 
 ---
 
@@ -1201,8 +1222,6 @@ They should not be silently inserted into this repository.
 ---
 
 # Research Families Requiring Citation in Public Release
-
----
 
 ## 74. AlphaZero
 
@@ -1254,7 +1273,7 @@ Relevant for:
 - gating;
 - dynamic allocation.
 
-Recent direct chess-routing work should be cited before public release.
+Relevant direct chess-routing work should be reviewed before any novelty claim.
 
 ---
 
@@ -1349,8 +1368,6 @@ Relevant for:
 
 # Claim Boundary
 
----
-
 ## 89. Preferred language
 
 Until empirical evidence exists, documentation should use phrases such as:
@@ -1410,30 +1427,491 @@ Likewise, later work should not erase the provenance of earlier architecture or 
 
 ---
 
-## 93. Current licensing direction
+## 93. Current documentation license
 
-The current intended documentation-license direction is:
+The architecture documentation is licensed under:
 
-> **CC BY 4.0**
+> **Creative Commons Attribution 4.0 International — CC BY 4.0**
 
-The intention is to permit:
+The license is intended to permit, subject to its terms:
 
 - reuse;
 - modification;
 - redistribution;
+- research use;
 - commercial use;
 
 while requiring appropriate attribution.
 
-The preferred attribution name is still to be selected.
+The preferred attribution name is:
 
-A formal `LICENSE` file should be added before public release.
+> **Unimplemented Bishop**
 
-Future code may use a separate software license.
+The repository contains a `LICENSE` file formalizing the documentation-license notice.
+
+Future source code may use a separate software license.
 
 ---
 
-## 94. Final provenance principle
+# Adaptive-Feedback Extensions: Provenance and Decisions
+
+The following sections record later architectural extensions that emerged after the initial proposal.
+
+They remain subject to the same provenance and validation discipline.
+
+---
+
+## 94. Multi-timescale adaptation `[A+B+C]`
+
+Learning and control across multiple timescales are established ideas across:
+
+- reinforcement learning;
+- control;
+- continual learning;
+- hierarchical systems;
+- adaptive systems.
+
+The project-specific composition distinguishes approximately:
+
+```text
+online / fast
+event-triggered deliberation
+match-scale / intermediate adaptation
+offline / slow training
+```
+
+These are conceptual timescales rather than mandatory software layers.
+
+The project does not claim that this exact decomposition is established prior art or experimentally optimal.
+
+---
+
+## 95. Predictability vs TrainingValue `[B+C]`
+
+The project originally used Predictability primarily as a control and resource signal.
+
+A later correction distinguishes:
+
+```text
+Predictability
+=
+How forecastable does the opponent appear?
+
+TrainingValue
+=
+How valuable would additional training on this behaviour likely be?
+```
+
+A difficult-to-predict weak or random opponent may have low TrainingValue.
+
+A moderately strong opponent that exposes a reproducible structural weakness may have high TrainingValue.
+
+The broader concept of value-based resource allocation is prior art.
+
+The specific Council decomposition remains a project hypothesis.
+
+---
+
+## 96. Selective cross-game opponent memory `[A+B+C]`
+
+Persistent memory, replay, opponent profiling, and historical data use are established ideas.
+
+The project adapts them into a selective hierarchy such as:
+
+```text
+raw encounter
+↓
+short-term record
+↓
+compressed opponent summary
+↓
+strategy-family representation
+↓
+possible training-archive candidate
+```
+
+The project does not require permanent storage of every opponent.
+
+The useful retention rule remains an experimental question.
+
+---
+
+## 97. TrainingRequest interface `[B+C]`
+
+The project proposes an interface conceptually represented as:
+
+```text
+TRAIN_REQUEST
+```
+
+or an equivalent message.
+
+Its purpose is to connect:
+
+```text
+online discovery
+```
+
+with:
+
+```text
+training-side investigation
+```
+
+without allowing the online Router or opponent model to directly control training.
+
+A TrainingRequest means:
+
+> this observation may justify further evaluation.
+
+It does not mean:
+
+- the hypothesis is true;
+- training must occur;
+- large compute must be allocated;
+- a specialist should be deployed.
+
+This separation is project-specific.
+
+---
+
+## 98. Triggered Exploiter Training / targeted adaptation `[A+B+C]`
+
+Relevant prior-art families include:
+
+- population training;
+- exploiters;
+- continual learning;
+- curriculum learning;
+- targeted fine-tuning;
+- policy branching;
+- adversarial training.
+
+The project-specific composition is:
+
+```text
+Opponent evidence
+↓
+potentially useful Style × Expertise / vulnerability pattern
+↓
+TrainingRequest
+↓
+targeted Exploiter / specialist training
+↓
+independent evaluation
+↓
+optional validated deployment
+```
+
+This composition remains unimplemented and untested.
+
+The project does not claim to have invented continual learning or Exploiter training.
+
+---
+
+## 99. Active self-red-teaming `[A+B]`
+
+Adversarial training and population-based self-play are established ideas.
+
+The project proposes using the League not only to improve general play, but also to deliberately search for:
+
+- Main-policy failures;
+- specialist failures;
+- Router failures;
+- opponent-modelling failures;
+- historical regressions.
+
+A successful attack may become:
+
+```text
+candidate exploit
+↓
+replication
+↓
+evaluation
+↓
+training pressure
+↓
+archive / regression test
+```
+
+The purpose is to reduce known exploitability.
+
+It does not establish that all possible counter-strategies have been exhausted.
+
+---
+
+## 100. Event-Triggered Deep Deliberation `[A+B+C]`
+
+Relevant established families include:
+
+- metareasoning;
+- value of computation;
+- adaptive search allocation;
+- event-triggered control;
+- anytime computation.
+
+The project-specific proposal is to escalate computation when ordinary processing appears insufficient.
+
+A conceptual escalation may be:
+
+```text
+normal search
+↓
+deeper verification
+↓
+strategic reconsideration
+↓
+expanded Shadow analysis
+↓
+current-position rollout
+↓
+bounded local adaptation
+↓
+optional TrainingRequest
+```
+
+The escalation is intended to be:
+
+> value-driven, not fixed-duration.
+
+No claim is made that this exact sequence is novel or optimal.
+
+---
+
+## 101. Weakness Amplification `[B+C]`
+
+The original vulnerability mechanism focused on:
+
+> detecting and exploiting an opponent weakness.
+
+A later extension asks:
+
+> once a weakness is independently supported, can targeted training increase the system's ability to reach, sustain, or exploit that weakness?
+
+This creates the distinction:
+
+```text
+Weakness Detection
+≠
+Weakness Amplification
+```
+
+Relevant prior-art families include:
+
+- targeted training;
+- curriculum design;
+- exploiters;
+- adversarial response learning.
+
+The specific integration with the Council vulnerability system remains a project hypothesis.
+
+---
+
+## 102. Value-gated and representative Archive `[A+B+C]`
+
+Historical-policy retention, replay buffers, population archives, and regression suites are established ideas.
+
+The project proposes that Archive value should not be reduced to opponent strength.
+
+A policy may be valuable because it provides:
+
+- exploit value;
+- regression value;
+- strategic novelty;
+- coverage;
+- transfer value;
+- model-failure detection.
+
+The project may eventually compare:
+
+```text
+No Archive
+Store everything
+Value-gated Archive
+Representative / clustered Archive
+```
+
+The best retention rule remains unknown.
+
+---
+
+## 103. Correction: League role vs online strategy control
+
+### Potential confusion
+
+A Main policy could be interpreted as one fixed Style or Expert configuration.
+
+### Current position
+
+```text
+Main / Exploiter / Historical
+=
+training role or policy lineage
+
+Style / Expertise
+=
+strategic conditioning or capability dimensions
+```
+
+Therefore:
+
+```text
+Main
+≠
+Style
+
+Exploiter
+≠
+Expert
+```
+
+A Main policy may support many Style × Expertise configurations.
+
+An Exploiter may use any useful Style or Expertise configuration.
+
+---
+
+## 104. Correction: TrainingRequest is not evidence
+
+### Invalid implication
+
+A mechanism requests training, therefore the underlying vulnerability must be real.
+
+### Current position
+
+```text
+Evidence
+≠
+TrainingRequest
+≠
+TrainingCompute
+≠
+Deployment
+```
+
+A request must still survive independent evaluation.
+
+Training output cannot validate the premise that caused the training.
+
+---
+
+## 105. Correction: Archive types are not one storage system
+
+The project now distinguishes:
+
+```text
+Shadow Archive
+≠
+Encounter Memory
+≠
+League / Training Archive
+```
+
+### Shadow Archive
+
+Stores inactive opponent hypotheses.
+
+### Encounter Memory
+
+Stores selected summaries of real encounters.
+
+### League / Training Archive
+
+Stores policies or representatives used for training, regression, or population management.
+
+They may exchange information through controlled interfaces.
+
+They should not be treated as one undifferentiated memory.
+
+---
+
+## 106. Correction: in-game adaptation is neither forbidden nor unrestricted
+
+### Earlier risk
+
+Discussion could be interpreted as either:
+
+> no meaningful adaptation may occur during a game
+
+or:
+
+> the full network should be retrained whenever difficulty appears.
+
+Neither is the current position.
+
+### Current position
+
+Ordinary play should prefer:
+
+- existing policies;
+- search;
+- Router control;
+- opponent-model updates;
+- bounded adaptation.
+
+Important events may optionally trigger:
+
+- deeper deliberation;
+- temporary response branches;
+- current-position rollout;
+- lightweight local adaptation;
+- asynchronous targeted training.
+
+The stable base policy should remain recoverable.
+
+Unrestricted shared-backbone retraining remains outside the current core design.
+
+---
+
+# Additional Research Families Requiring Citation
+
+## 107. Continual / lifelong learning
+
+Relevant for:
+
+- learning from repeated encounters;
+- retaining new capability;
+- avoiding catastrophic forgetting;
+- managing stability vs plasticity.
+
+---
+
+## 108. Adversarial training and automated red teaming
+
+Relevant for:
+
+- self-red-teaming;
+- exploit discovery;
+- robustness training;
+- counter-policy generation.
+
+---
+
+## 109. Metareasoning / value of computation
+
+Relevant for:
+
+- deciding when additional search is worth its cost;
+- event-triggered deliberation;
+- adaptive compute allocation;
+- time-management decisions.
+
+---
+
+## 110. Replay, archives, and regression prevention
+
+Relevant for:
+
+- historical opponent retention;
+- regression testing;
+- selective replay;
+- forgetting resistance;
+- representative memory.
+
+---
+
+## 111. Final provenance principle
 
 Whenever a new mechanism is proposed, ask:
 
@@ -1443,5 +1921,7 @@ Whenever a new mechanism is proposed, ask:
 4. Has it actually been implemented?
 5. Has it actually been experimentally validated?
 6. Does it add enough value to justify its complexity?
+7. Is it distinct from an existing component?
+8. Does its provenance label still remain accurate after later redesign?
 
 If these questions cannot be answered clearly, the mechanism should not silently become part of the core architecture.

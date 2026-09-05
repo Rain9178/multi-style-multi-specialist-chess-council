@@ -18,8 +18,18 @@ Opponent modelling asks several different questions:
 4. Has the opponent changed short-term strategy?
 5. How uncertain is the current model?
 6. How much should the rest of the system trust this model?
+7. Is the observed opponent behaviour valuable enough to justify persistent memory or more expensive training-side investigation?
 
 These questions should not be collapsed into one categorical opponent label.
+
+Opponent modelling is an inference system.
+
+It is not itself:
+
+- the strategic Router;
+- the League;
+- the playing policy;
+- the training coordinator.
 
 ---
 
@@ -46,6 +56,42 @@ If historical games of the same opponent are legally and experimentally availabl
 
 They are optional, not required.
 
+### Selective cross-game memory `[B+C]`
+
+A future adaptive system may preserve selected information across repeated encounters.
+
+Possible retained information includes:
+
+- compressed opponent summaries;
+- calibrated Trait estimates;
+- previously supported Mode families;
+- recurring vulnerability hypotheses;
+- opponent-family membership;
+- previous model failures;
+- previously useful specialist references.
+
+This does **not** imply permanent storage of every encountered opponent.
+
+A possible hierarchy is:
+
+```text
+raw encounter
+↓
+short-term record
+↓
+compressed opponent summary
+↓
+optional strategy-family representation
+↓
+possible training-archive candidate
+```
+
+Retention should be:
+
+- selective;
+- value-gated;
+- experimentally justified.
+
 ---
 
 ## 3. Recognizer `[A+B+C]`
@@ -69,6 +115,12 @@ Possible inferred variables include:
 - short-term Mode.
 
 The exact latent representation remains open.
+
+The Recognizer primarily explains:
+
+> **what has actually been observed.**
+
+It should not manufacture evidence from its own predictions.
 
 ---
 
@@ -103,6 +155,10 @@ PreferenceEvidence
 \neq
 CompetenceEvidence
 \]
+
+A preference for tactical positions does not prove tactical weakness or tactical strength.
+
+Likewise, weakness in a domain does not imply that the opponent prefers or avoids that domain.
 
 ---
 
@@ -164,6 +220,12 @@ A hard binary Evidence Gate is not required.
 
 A continuous information weight is preferred.
 
+Evidence quality should remain distinct from:
+
+- prediction confidence;
+- compute allocation;
+- training value.
+
 ---
 
 ## 8. Shadow Ensemble `[B+C]`
@@ -185,7 +247,7 @@ where:
 
 - \(h_t\) = observed game history;
 - \(\theta_B\) = shared chess representation;
-- \(z_i\) = opponent hypothesis conditioning;
+- \(z_i\) = opponent-hypothesis conditioning;
 - \(\phi_i\) = optional lightweight Shadow-specific parameters.
 
 The earlier shorthand:
@@ -509,7 +571,7 @@ q_i
 where:
 
 - \(p_i\) = current belief;
-- \(c_i\) = Challenger/test value;
+- \(c_i\) = Challenger / test value;
 - \(\lambda_t\) = current tendency to exploit the established model rather than challenge it.
 
 This is only a conceptual control form.
@@ -662,13 +724,76 @@ High Predictability and high ModelTrust may justify:
 Low Predictability or low ModelTrust may justify:
 
 - more Challenger compute;
-- Archive revival;
+- Shadow Archive revival;
 - broader hypothesis coverage;
 - less opponent-specific control.
 
 Predictability changes resource allocation.
 
 It does not define truth.
+
+### Predictability is not TrainingValue
+
+A difficult-to-predict opponent is not automatically worth expensive adaptation.
+
+For example:
+
+```text
+weak opponent
++
+highly random behaviour
+```
+
+may be:
+
+```text
+hard to predict
+```
+
+but still:
+
+```text
+low training value
+```
+
+Conversely:
+
+```text
+moderate-strength opponent
++
+reproducible exploit against our system
+```
+
+may have very high training value.
+
+A conceptual training-value estimate might consider:
+
+\[
+TrainingValue
+=
+f(
+Strength,
+Novelty,
+ReproducibleExploit,
+ReusableValue,
+ExpectedGain,
+ComputeCost
+)
+\]
+
+This is a conceptual decomposition only.
+
+No final training-value equation is fixed.
+
+TrainingValue should answer:
+
+> Is this behaviour worth sending to the training ecosystem for further investigation?
+
+It should **not** answer:
+
+> Is the underlying hypothesis true?
+
+Those remain separate questions.
 
 ---
 
@@ -718,6 +843,11 @@ The exact implementation may use:
 - another method.
 
 No specific detector is mandatory.
+
+Opponent-model timescales should also remain distinct from:
+
+- match-scale playing-policy adaptation;
+- long-term League training.
 
 ---
 
@@ -798,7 +928,11 @@ The purpose is to allow local refinement without destroying Shadow identity.
 
 ## 33. What may adapt online?
 
-Early implementations should prefer lightweight adjustments such as:
+This section concerns **opponent-model adaptation**.
+
+It should not be confused with training the system's own playing policy.
+
+Early implementations should prefer lightweight Shadow or opponent-model adjustments such as:
 
 - Style mixture;
 - Expert mixture;
@@ -807,6 +941,39 @@ Early implementations should prefer lightweight adjustments such as:
 - local behavioural parameters.
 
 The architecture does not recommend unrestricted in-game training of the shared chess backbone.
+
+### Opponent-model adaptation vs playing-policy adaptation
+
+These are different processes.
+
+```text
+Shadow adaptation
+```
+
+asks:
+
+> How should our hypothesis about the opponent change?
+
+while:
+
+```text
+playing-policy adaptation
+```
+
+asks:
+
+> Should our own chess capabilities or specialist policies change?
+
+The second belongs primarily to the training ecosystem.
+
+Opponent modelling may provide evidence supporting a `TRAIN_REQUEST` or equivalent message.
+
+It should not directly:
+
+- retrain the League;
+- overwrite a Main policy;
+- replace the shared chess backbone;
+- promote a candidate specialist.
 
 ---
 
@@ -863,6 +1030,36 @@ An archived Shadow may be revived when:
 - ShiftRisk rises;
 - the active ensemble becomes confidently wrong.
 
+### Archive terminology boundary
+
+Several forms of memory should remain distinct.
+
+#### Shadow Archive
+
+Stores inactive opponent hypotheses used by the online opponent model.
+
+#### Encounter Memory
+
+Stores selected summaries from real past encounters.
+
+#### League / Training Archive
+
+Stores policies, Exploiters, historical opponents, or training representatives used by the offline training ecosystem.
+
+Therefore:
+
+```text
+Shadow Archive
+≠
+Encounter Memory
+≠
+League / Training Archive
+```
+
+They may exchange information through controlled interfaces.
+
+They should not be treated as one undifferentiated storage system.
+
 ---
 
 ## 36. Confidently wrong ensemble
@@ -885,9 +1082,10 @@ Possible reactions include:
 
 - lower ModelTrust;
 - expand Challenger coverage;
-- reactivate Archive hypotheses;
+- reactivate Shadow Archive hypotheses;
 - reduce opponent-specific Router influence;
-- reconsider Mode.
+- reconsider Mode;
+- increase event-triggered deliberation.
 
 ---
 
@@ -915,6 +1113,8 @@ If the system is tested against human players, strong engine move prediction is 
 Human move prediction is a distinct research task.
 
 Future experiments should therefore compare against appropriate behavioural models when available.
+
+The same caution applies when historical human games are used for persistent opponent summaries.
 
 ---
 
@@ -958,9 +1158,119 @@ or another equivalent quality constraint.
 
 If informative probing opportunities are too rare, the mechanism should be removed.
 
+Active probing is intended to improve inference.
+
+It is not permission to play objectively poor moves merely to manipulate the opponent model.
+
 ---
 
-## 41. Required output to the Router
+## 41. Deception and deliberate nonstationarity
+
+A future opponent may deliberately attempt to mislead the modelling system.
+
+Examples include:
+
+- behaving like one Style before switching;
+- presenting a temporary false weakness;
+- changing policy after ModelTrust rises;
+- deliberately increasing apparent predictability;
+- using several near-optimal strategy families.
+
+The initial architecture should **not** require a separate recursive Deception Agent.
+
+Instead, deception may be represented through:
+
+- competing Shadow hypotheses;
+- higher ShiftRisk;
+- lower ModelTrust;
+- increased Challenger allocation;
+- Sentinel coverage;
+- Mode-change hypotheses;
+- out-of-family model-failure warnings.
+
+If later experiments demonstrate that these mechanisms are insufficient, a more explicit deception model may be considered.
+
+The architecture should avoid unbounded recursion such as:
+
+```text
+I model
+your model
+of my model
+of your model
+...
+```
+
+unless a controlled experiment demonstrates measurable value.
+
+---
+
+## 42. From opponent evidence to training-side investigation
+
+Opponent modelling may sometimes discover behaviour that appears valuable beyond the current move or game.
+
+Examples include:
+
+- a reproducible weakness;
+- an unfamiliar strategy family;
+- a policy that reliably exploits the current system;
+- a recurring Mode-switch pattern;
+- a failure mode shared across several Shadows or policies.
+
+Such a discovery may produce a compact candidate request:
+
+```text
+candidate opponent / policy family
+evidence summary
+reproducible vulnerability
+novelty estimate
+possible reusable value
+uncertainty
+```
+
+This may be passed toward the training ecosystem as:
+
+```text
+TRAIN_REQUEST
+```
+
+or an equivalent interface.
+
+### Critical boundary
+
+A `TRAIN_REQUEST` means:
+
+> this pattern may be worth further evaluation.
+
+It does **not** mean:
+
+> the pattern has been proved;
+> training must occur;
+> more compute should increase belief;
+> a new specialist should be deployed immediately.
+
+The training side must independently decide whether to:
+
+- reject the request;
+- gather more evidence;
+- allocate limited compute;
+- reproduce the finding;
+- train candidate Exploiters or specialists;
+- archive the pattern;
+- deploy nothing.
+
+This preserves:
+
+\[
+Evidence
+\neq
+TrainingCompute
+\neq
+Deployment
+\]
+
+---
+
+## 43. Required output to the Router
 
 The opponent-modelling layer should not send a giant unstructured model.
 
@@ -979,9 +1289,11 @@ model-failure warning
 
 The exact format remains an engineering decision.
 
+Training-side information should preferably use a separate compact interface rather than overloading the Router.
+
 ---
 
-## 42. Opponent modelling does not equal exploitation
+## 44. Opponent modelling does not equal exploitation
 
 Improved prediction is not automatically useful chess exploitation.
 
@@ -1000,9 +1312,27 @@ It is entirely possible that:
 
 That would still be an important negative result.
 
+Likewise:
+
+\[
+BetterPrediction
+\not\Rightarrow
+TargetedTrainingIsWorthwhile
+\]
+
+and:
+
+\[
+DetectedWeakness
+\not\Rightarrow
+ProfitableWeaknessAmplification
+\]
+
+These are separate hypotheses requiring separate experiments.
+
 ---
 
-## 43. Main hypotheses
+## 45. Main hypotheses
 
 ### H1 — Preference inference
 
@@ -1032,11 +1362,23 @@ Predictability and ModelTrust improve resource allocation and reduce overconfide
 
 Separating fast Mode from slow Trait improves robustness to strategic shifts.
 
+### H8 — Selective persistent memory
+
+Value-gated cross-game opponent summaries improve later modelling or playing performance without requiring permanent storage of every opponent.
+
+### H9 — Training-value separation
+
+Explicitly separating Predictability from TrainingValue reduces wasted adaptation compute and improves resource allocation.
+
+### H10 — Training-request usefulness
+
+Opponent-modelling outputs can identify a subset of discoveries that are sufficiently reproducible and reusable to justify training-side investigation.
+
 All remain untested.
 
 ---
 
-## 44. Failure conditions
+## 46. Failure conditions
 
 The opponent-modelling branch should be simplified or abandoned if:
 
@@ -1047,9 +1389,34 @@ The opponent-modelling branch should be simplified or abandoned if:
 - Challenger allocation adds cost without reducing error;
 - bounded adaptation causes Shadow collapse;
 - Mode detection creates excessive false alarms;
+- cross-game memory produces no measurable value;
+- TrainingValue estimates repeatedly waste compute;
+- training requests have excessive false-positive rates;
 - better prediction does not improve actual play;
 - compute overhead exceeds practical value.
 
 The architecture should tolerate the possibility that:
 
 > a strong general chess engine is already too robust for detailed opponent modelling to justify its complexity.
+
+---
+
+## 47. Final boundary
+
+The opponent-modelling system should remain:
+
+> **a probabilistic, evidence-grounded description of the opponent — not an all-purpose intelligence layer.**
+
+Its role is to improve:
+
+- prediction;
+- uncertainty estimation;
+- strategic control;
+- resource allocation;
+- identification of potentially reusable opponent-specific information.
+
+The base chess system remains responsible for chess competence.
+
+The Router remains responsible for strategic control.
+
+The training ecosystem remains responsible for training, evaluation, archival policy, and validated capability deployment.
